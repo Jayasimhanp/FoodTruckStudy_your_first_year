@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your First Year - Capstone Scenario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --navy:#052D84; --navy-light:#1745A8; --ink:#1A2744; --body:#2C3E4A;
+    --bg:#F7F7F5; --paper:#FFFFFF; --gold-bright:#FED600; --gold-muted:#C9920A;
+    --gold-tint:#FFF8D1; --line:#E3DFCE; --sage:#3F8A5C; --rust:#C1502E; --plum:#6B4E9C;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--body);font-family:'Inter',sans-serif;}
+  .wrap{max-width:920px;margin:0 auto;padding:28px 24px 100px;}
+
+  header{background:var(--ink); color:#fff; padding:36px 24px 26px;}
+  header .inner{max-width:920px;margin:0 auto;}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-bright);margin:0 0 10px;}
+  h1{font-size:clamp(22px,4vw,30px);font-weight:800;margin:0 0 8px;line-height:1.2;}
+  header p{max-width:680px;color:#C7CCD4;font-size:14.5px;line-height:1.55;margin:0;}
+
+  .dashboard{
+    position:sticky; top:0; z-index:20; background:var(--paper); border-bottom:1px solid var(--line);
+    padding:12px 24px; box-shadow:0 4px 14px -6px rgba(0,0,0,.12);
+  }
+  .dash-inner{max-width:920px; margin:0 auto; display:flex; align-items:center; gap:22px; flex-wrap:wrap;}
+  .progress-label{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--gold-muted); font-weight:700; text-transform:uppercase; white-space:nowrap;}
+  .metric{display:flex; align-items:center; gap:7px;}
+  .metric .m-label{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#8a8578; text-transform:uppercase;}
+  .metric .m-bar{width:64px; height:7px; background:#EDEAE0; border-radius:99px; overflow:hidden;}
+  .metric .m-fill{height:100%; border-radius:99px; transition:width .4s ease;}
+  .metric .m-fill.cash{background:var(--sage);}
+  .metric .m-fill.rep{background:var(--navy-light);}
+  .metric .m-fill.morale{background:var(--plum);}
+
+  .scenario-card{background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:28px 30px; margin-bottom:20px;}
+  .scenario-card .d-eyebrow{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--gold-muted); text-transform:uppercase; font-weight:700; margin-bottom:10px;}
+  .scenario-card h2{font-size:22px; font-weight:800; color:var(--ink); margin:0 0 14px;}
+  .scenario-card p{font-size:15px; line-height:1.65; margin:0 0 12px;}
+
+  .tool-prompt{
+    background:#EAF2FB; border:1px solid #C7D9F0; border-radius:12px; padding:16px 20px; margin-bottom:20px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  .tool-prompt .tp-text{font-size:14px; color:var(--ink); line-height:1.5;}
+  .tool-prompt .tp-text b{color:var(--navy);}
+  .tool-link{
+    display:inline-flex; align-items:center; gap:8px; background:var(--navy); color:#fff; font-weight:700;
+    font-size:13.5px; padding:10px 16px; border-radius:9px; text-decoration:none; white-space:nowrap;
+  }
+  .tool-link:hover{background:var(--navy-light);}
+
+  .options{display:flex; flex-direction:column; gap:12px; margin-bottom:8px;}
+  .option-btn{
+    background:var(--paper); border:1.6px solid var(--line); border-radius:12px; padding:16px 20px;
+    text-align:left; cursor:pointer; font-family:'Inter',sans-serif; transition:border-color .15s; display:flex; align-items:flex-start;
+  }
+  .option-btn:hover{border-color:var(--navy-light);}
+  .option-btn:disabled{cursor:default; opacity:.45;}
+  .opt-letter{
+    display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%;
+    background:var(--gold-tint); border:1.4px solid #EBD98A; color:var(--ink); font-weight:800; font-size:12.5px;
+    font-family:'IBM Plex Mono',monospace; margin-right:14px; flex:0 0 auto;
+  }
+  .opt-text{font-size:14.5px; color:var(--body); line-height:1.5;}
+
+  .feedback-card{
+    display:none; background:var(--ink); color:#fff; border-radius:14px; padding:26px 28px; margin-bottom:20px;
+  }
+  .feedback-card.show{display:block;}
+  .fb-label{font-family:'IBM Plex Mono',monospace; font-size:11px; text-transform:uppercase; font-weight:700; margin-bottom:10px;}
+  .fb-label.good{color:var(--gold-bright);}
+  .fb-label.mixed{color:#FF8A70;}
+  .feedback-card p{font-size:14px; line-height:1.65; color:#E4E8EF; margin:0 0 12px;}
+  .metric-changes{display:flex; gap:12px; margin-bottom:14px; flex-wrap:wrap;}
+  .mc{font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:700; padding:5px 12px; border-radius:999px; background:rgba(255,255,255,0.08);}
+  .mc.pos{color:var(--gold-bright);}
+  .mc.neg{color:#FF8A70;}
+  .mc.neu{color:#C7CCD4;}
+
+  .review-callout{background:rgba(255,255,255,0.08); border-radius:10px; padding:14px 18px; margin-bottom:16px;}
+  .rc-label{font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; color:var(--gold-bright); font-weight:700; margin-bottom:6px;}
+  .review-callout a{color:#fff; font-weight:700; font-size:13.5px; text-decoration:underline;}
+
+  .actions{display:flex; gap:10px; margin-top:4px;}
+  .btn{display:inline-flex; align-items:center; gap:9px; font-weight:700; font-size:14px; border-radius:10px; padding:13px 24px; cursor:pointer; border:none; font-family:'Inter',sans-serif;}
+  .btn-primary{background:var(--navy); color:#fff;}
+  .btn-primary:hover{background:var(--navy-light);}
+  .arrow-circle{width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:10px;}
+
+  .ending-hero{background:var(--ink); color:#fff; border-radius:16px; padding:40px 34px; margin-bottom:24px; text-align:center;}
+  .eh-eyebrow{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--gold-bright); text-transform:uppercase; letter-spacing:.1em; margin-bottom:14px;}
+  .ending-hero h2{font-size:28px; font-weight:800; margin:0 0 14px;}
+  .ending-hero p{font-size:15px; color:#C7CCD4; max-width:580px; margin:0 auto; line-height:1.6;}
+  .final-metrics{display:flex; justify-content:center; gap:36px; margin-top:26px; flex-wrap:wrap;}
+  .fm{text-align:center;}
+  .fm .fm-label{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#9FA8B8; text-transform:uppercase;}
+  .fm .fm-value{font-size:24px; font-weight:800; color:var(--gold-bright); margin-top:4px;}
+
+  .journey-table{width:100%; border-collapse:collapse; margin-bottom:24px;}
+  .journey-table th{background:var(--navy); color:#fff; font-size:11px; font-family:'IBM Plex Mono',monospace; text-transform:uppercase; padding:10px 12px; text-align:left;}
+  .journey-table td{padding:12px; border-top:1px solid var(--line); font-size:13.5px; background:var(--paper); vertical-align:top;}
+
+  .review-list-card{background:var(--gold-tint); border:1px solid #EBD98A; border-radius:14px; padding:24px 28px; margin-bottom:24px;}
+  .review-list-card h3{font-size:16px; font-weight:800; color:var(--ink); margin:0 0 6px;}
+  .rlc-sub{font-size:13px; color:var(--body); margin-bottom:16px;}
+  .review-list-card ul{margin:0; padding-left:20px;}
+  .review-list-card li{font-size:14px; line-height:1.8; color:var(--ink);}
+  .review-list-card li a{color:var(--navy); font-weight:700;}
+  .all-good{font-size:14.5px; color:var(--sage); font-weight:700;}
+
+  .footnote{font-size:12px; color:#8a8578; margin-top:10px; line-height:1.6;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <p class="eyebrow">Capstone &middot; Your First Year</p>
+    <h1>Your First Year Running the Truck</h1>
+    <p>You've finished building your food truck business. Now run it. Eight real decisions, pulled from every module in this course - each one shapes the next. There's no single right path, but some choices serve you better than others.</p>
+  </div>
+</header>
+
+<div class="dashboard" id="dashboard">
+  <div class="dash-inner">
+    <span class="progress-label" id="progressLabel">Decision 1 of 8</span>
+    <div class="metric">
+      <span class="m-label">Cash</span>
+      <div class="m-bar"><div class="m-fill cash" id="cashBar" style="width:50%;"></div></div>
+    </div>
+    <div class="metric">
+      <span class="m-label">Reputation</span>
+      <div class="m-bar"><div class="m-fill rep" id="repBar" style="width:50%;"></div></div>
+    </div>
+    <div class="metric">
+      <span class="m-label">Team Morale</span>
+      <div class="m-bar"><div class="m-fill morale" id="moraleBar" style="width:50%;"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap" id="gameWrap"></div>
+
+<script>
+/* ============================================================
+   PLACEHOLDER CONFIG - fill these in once the course is live.
+   REVIEW_LINKS = links back to the relevant teaching screen.
+   TOOL_LINKS = links to the hosted interactive tools.
+   Everything else in this file can be left alone.
+============================================================ */
+const REVIEW_LINKS = {
+  eventFees:    { label: "Module 8 \u2013 The Price of a Meal",              url: "#REPLACE-WITH-COURSE-URL" },
+  foodCost:     { label: "Module 4 \u2013 Food Cost Percentage",             url: "#REPLACE-WITH-COURSE-URL" },
+  payClarity:   { label: "Module 6 \u2013 Be Clear About Pay",               url: "#REPLACE-WITH-COURSE-URL" },
+  permits:      { label: "Module 7 \u2013 Health Department Permit to Operate", url: "#REPLACE-WITH-COURSE-URL" },
+  cashFlow:     { label: "Module 3 \u2013 Manage Cash Flow",                 url: "#REPLACE-WITH-COURSE-URL" },
+  harassment:   { label: "Module 6 \u2013 Scenario 1: Handling a Harassment Complaint", url: "#REPLACE-WITH-COURSE-URL" },
+  eventHistory: { label: "Module 8 \u2013 What to Look for With Events",     url: "#REPLACE-WITH-COURSE-URL" }
+};
+
+const TOOL_LINKS = {
+  eventCalc: { label: "Open Event Profitability Calculator", url: "#REPLACE-WITH-TOOL-URL" },
+  recipeCalc:{ label: "Open Recipe Costing Calculator",       url: "#REPLACE-WITH-TOOL-URL" },
+  cashFlow:  { label: "Open Cash Flow Statement",             url: "#REPLACE-WITH-TOOL-URL" },
+  loan:      { label: "Open Loan Repayment Calculator",       url: "#REPLACE-WITH-TOOL-URL" },
+  menu:      { label: "Open Menu Builder",                    url: "#REPLACE-WITH-TOOL-URL" },
+  jobdesc:   { label: "Open Job Description Builder",         url: "#REPLACE-WITH-TOOL-URL" }
+};
+/* ============================================================ */
+
+const DECISIONS = [
+  {
+    id: 1,
+    eyebrow: "Module 8 \u00b7 Working with Organizers",
+    title: "A Big Festival, a Big Fee",
+    narrative: "Your truck gets an email from a well-known city festival organizer. They loved your last few markets and want you at their big summer festival - great exposure, huge expected crowd. There's one catch: they take 35% of your gross sales to participate.",
+    toolPrompt: { text: "Not sure if this pencils out? ", toolKey: "eventCalc" },
+    options: [
+      { letter:"A", text:"Accept the fee. It's a big, visible festival - the exposure alone could be worth it.",
+        metrics:{cash:-2,rep:2,morale:0},
+        feedback:"You work the festival and it's genuinely busy - but after handing over 35% of every sale, your margin barely survives. Trucks typically net 10-15% after normal costs; a 35% event fee eats straight through that. Exposure has value, but it doesn't pay your bills.",
+        weakest:true, reviewKey:"eventFees" },
+      { letter:"B", text:"Negotiate. Ask if they'll take a lower percentage or a flat fee instead.",
+        metrics:{cash:1,rep:1,morale:0},
+        feedback:"The organizer agrees to a reduced 20% rate once you point out your typical margins. It's still a real cost, but now the math works. Organizers expect pushback - asking rarely costs you the invitation." },
+      { letter:"C", text:"Decline, and stick to your reliable daily lots instead.",
+        metrics:{cash:2,rep:-1,morale:1},
+        feedback:"You skip the festival and keep your steady lot income instead. Safe, but you also pass on a chance to reach new customers and build your reputation with a bigger organizer network." }
+    ]
+  },
+  {
+    id: 2,
+    eyebrow: "Module 4 \u00b7 Menu Design",
+    title: "Beef Prices Just Jumped",
+    narrative: "Your primary beef supplier calls: due to a supply shortage, prices are going up 15% effective immediately. Your Classic Cheeseburger's food cost just got more expensive, and you have to decide what to do before this week's orders go out.",
+    toolPrompt: { text: "Want to see the exact impact on your margin? ", toolKey: "recipeCalc" },
+    options: [
+      { letter:"A", text:"Absorb the cost and keep menu prices exactly the same.",
+        metrics:{cash:-2,rep:1,morale:0},
+        feedback:"Customers don't notice a thing, but your margin on every burger just shrank. If this price hike sticks around, absorbing it indefinitely isn't sustainable - eventually something else has to give." },
+      { letter:"B", text:"Raise prices modestly and explain why, honestly.",
+        metrics:{cash:1,rep:0,morale:0},
+        feedback:"You bump the Classic Cheeseburger by 50 cents and post a short, honest note about supplier costs. A few customers comment, but most understand - trimming costs and pricing honestly tends to hold up better than either extreme." },
+      { letter:"C", text:"Quietly swap in a cheaper ground beef blend without telling anyone.",
+        metrics:{cash:2,rep:-2,morale:-1},
+        feedback:"Your margin recovers immediately - but a few regulars notice the burger doesn't taste the same, and one leaves a review saying so. Cutting quality without transparency is the fastest way to lose the trust that took months to build.",
+        weakest:true, reviewKey:"foodCost" }
+    ]
+  },
+  {
+    id: 3,
+    eyebrow: "Module 6 \u00b7 Human Resources Plan",
+    title: "A Great Hire Wants More",
+    narrative: "You've interviewed a genuinely excellent prep cook candidate - fast, experienced, great attitude. They ask for $2/hour more than what you posted in the job description.",
+    toolPrompt: null,
+    options: [
+      { letter:"A", text:"Match their ask. It's worth stretching the budget for.",
+        metrics:{cash:-1,rep:0,morale:2},
+        feedback:"You bring them on at the higher rate. They're worth every penny - service runs smoother than it has in months, and the rest of your team notices the standard they set." },
+      { letter:"B", text:"Hold firm at your posted rate, even if it means losing them.",
+        metrics:{cash:1,rep:0,morale:-1},
+        feedback:"They decline and take another offer. You save on payroll, but you're back to square one on hiring, and word travels fast in a small industry - other applicants hear you don't flex on pay.",
+        weakest:true, reviewKey:"payClarity" },
+      { letter:"C", text:"Offer a modest raise now, with a clear path to their full ask after a 90-day review.",
+        metrics:{cash:0,rep:0,morale:1},
+        feedback:"They accept. You've been clear about pay and expectations from day one, and you've protected some budget flexibility while still landing a strong hire." }
+    ]
+  },
+  {
+    id: 4,
+    eyebrow: "Module 7 \u00b7 Local Regulations",
+    title: "A Permit Gap, Two Weeks Out",
+    narrative: "Two weeks before your planned launch in a new city, you realize your health permit paperwork has a gap - a required inspection you didn't know about.",
+    toolPrompt: null,
+    options: [
+      { letter:"A", text:"Launch on schedule anyway and sort the paperwork out after.",
+        metrics:{cash:1,rep:-2,morale:-1},
+        feedback:"You open on time, but an inspector shows up on day three. Operating without proper permits risks fines, an impounded truck, and lasting damage to your reputation in a city where you're brand new - a bad way to start.",
+        weakest:true, reviewKey:"permits" },
+      { letter:"B", text:"Delay the launch until the permit is fully sorted.",
+        metrics:{cash:-1,rep:1,morale:0},
+        feedback:"You push your launch back a week. It costs you some momentum and a bit of cash, but you open clean, with nothing hanging over you." },
+      { letter:"C", text:"Call the health department directly and ask what's the fastest legitimate path forward.",
+        metrics:{cash:0,rep:1,morale:0},
+        feedback:"The inspector's office fits you in two days later than planned. The enforcement agency issuing your permit is always your best source of information - not a guess." }
+    ]
+  },
+  {
+    id: 5,
+    eyebrow: "Module 3 \u00b7 Business and Financial Plan",
+    title: "A Tight Month, Right Before Payday",
+    narrative: "It's been a slow month. A large catering payment is coming in 10 days, but right now your account is tight and a vendor invoice is due tomorrow.",
+    toolPrompt: { text: "Want to see exactly where your cash position dips? ", toolKey: "cashFlow" },
+    options: [
+      { letter:"A", text:"Take a quick cash advance to cover the gap.",
+        metrics:{cash:-2,rep:0,morale:0},
+        feedback:"The advance covers you, but the fees are steep, and you're now paying for this slow month twice - once in lost revenue, once in interest.",
+        weakest:true, reviewKey:"cashFlow" },
+      { letter:"B", text:"Call the vendor, explain the timing, and ask for a few extra days.",
+        metrics:{cash:1,rep:0,morale:0},
+        feedback:"The vendor agrees without hesitation - they'd rather wait a few days than lose you as a customer. This is exactly the kind of timing gap that catches new owners off guard: profitable on paper, tight in the moment." },
+      { letter:"C", text:"Cover it from personal savings.",
+        metrics:{cash:0,rep:0,morale:-1},
+        feedback:"It works, but dipping into personal funds to cover business timing gaps isn't a habit you want to build - and it quietly weighs on you even after the catering payment clears." }
+    ]
+  },
+  {
+    id: 6,
+    eyebrow: "Module 6 \u00b7 Human Resources Plan",
+    title: "A Complaint You Can't Ignore",
+    narrative: "An employee, Tina, comes to you with a complaint: another team member has been making her uncomfortable with comments about her appearance.",
+    toolPrompt: null,
+    options: [
+      { letter:"A", text:"Take her word for it and fire the accused employee immediately.",
+        metrics:{cash:0,rep:-1,morale:-1},
+        feedback:"You act fast, but without documenting or investigating first, you've skipped a legally required step - and if the accused employee disputes it, you have nothing on record to support your decision." },
+      { letter:"B", text:"Document the complaint and investigate properly before taking any action.",
+        metrics:{cash:0,rep:1,morale:1},
+        feedback:"You follow the right process: document, investigate, then act. Your team sees that complaints are taken seriously and handled fairly - which matters as much as the outcome itself." },
+      { letter:"C", text:"Treat it as a personality conflict and let it go.",
+        metrics:{cash:0,rep:-2,morale:-2},
+        feedback:"The behavior continues, morale drops, and you're now legally exposed if this escalates. Ignoring a harassment complaint isn't neutral - it's a decision, and a costly one.",
+        weakest:true, reviewKey:"harassment" }
+    ]
+  },
+  {
+    id: 7,
+    eyebrow: "Module 8 \u00b7 Working with Organizers",
+    title: "Two Organizers, Same Weekend",
+    narrative: "Two organizers want you the same weekend. One is your regular Thursday lot - modest but reliable. The other is a brand-new festival organizer promising a huge crowd, but you've never worked with them before.",
+    toolPrompt: { text: "Want to compare the two scenarios side by side? ", toolKey: "eventCalc" },
+    options: [
+      { letter:"A", text:"Take the reliable lot. Known numbers beat a promise.",
+        metrics:{cash:1,rep:0,morale:1},
+        feedback:"A solid, predictable day. Nothing exciting, but nothing risky either." },
+      { letter:"B", text:"Take the new festival - the upside sounds too big to pass up.",
+        metrics:{cash:-1,rep:0,morale:-1},
+        feedback:"Turnout is far lower than promised, and you've prepped inventory for a crowd that never showed. Always ask an unproven event for real attendance history before committing.",
+        weakest:true, reviewKey:"eventHistory" },
+      { letter:"C", text:"Ask the festival organizer for verified attendance numbers from past events before deciding.",
+        metrics:{cash:1,rep:1,morale:1},
+        feedback:"The organizer can't produce real numbers - a red flag by itself. You pass on the festival, keep your reliable lot, and avoid a costly guess. Asking the question was the win here, regardless of which event you'd have picked." }
+    ]
+  },
+  {
+    id: 8,
+    eyebrow: "Year-End Reflection",
+    title: "Putting Your Cash Reserve to Work",
+    narrative: "You've made it through your first year. You have some cash reserve built up beyond your safety net. How do you put it to work? There's no wrong answer here - it depends on what you're prioritizing next.",
+    toolPrompt: null,
+    finalDecision: true,
+    options: [
+      { letter:"A", text:"Reinvest toward a second truck.",
+        metrics:{cash:-1,rep:1,morale:0},
+        feedback:"Growth mode. A second truck means double the revenue potential - and double the complexity. Worth modeling out financing costs carefully before committing.",
+        toolKey:"loan" },
+      { letter:"B", text:"Add a new signature item to boost margins on your best-selling menu.",
+        metrics:{cash:1,rep:1,morale:0},
+        feedback:"You develop a new higher-margin item using ingredients you already stock efficiently. Smart, contained growth - built on what you already know works.",
+        toolKey:"menu" },
+      { letter:"C", text:"Hire an assistant manager to take some of the day-to-day off your plate.",
+        metrics:{cash:-1,rep:0,morale:2},
+        feedback:"You're stretched thin after a full year of doing everything yourself. Bringing on real support protects you from burnout - the version of your business that lasts is the one you can actually sustain.",
+        toolKey:"jobdesc" }
+    ]
+  }
+];
+
+let currentDecision = 0;
+let metrics = { cash: 0, rep: 0, morale: 0 };
+let journey = []; // { decisionTitle, choiceText, weakest, reviewKey }
+
+function clampBar(val){
+  // map a score roughly in [-8,8] to a 0-100% bar, centered at 50%
+  const pct = 50 + (val * 6);
+  return Math.max(4, Math.min(96, pct));
+}
+function updateDashboard(){
+  document.getElementById("cashBar").style.width = clampBar(metrics.cash) + "%";
+  document.getElementById("repBar").style.width = clampBar(metrics.rep) + "%";
+  document.getElementById("moraleBar").style.width = clampBar(metrics.morale) + "%";
+  document.getElementById("progressLabel").textContent = currentDecision < DECISIONS.length
+    ? `Decision ${currentDecision + 1} of ${DECISIONS.length}`
+    : `Complete`;
+}
+
+function renderDecision(){
+  const d = DECISIONS[currentDecision];
+  const wrap = document.getElementById("gameWrap");
+  let toolHtml = "";
+  if(d.toolPrompt){
+    const tool = TOOL_LINKS[d.toolPrompt.toolKey];
+    toolHtml = `
+      <div class="tool-prompt">
+        <div class="tp-text">${d.toolPrompt.text}<b>Run the numbers before you decide.</b></div>
+        <a class="tool-link" href="${tool.url}" target="_blank" rel="noopener">${tool.label} &rarr;</a>
+      </div>`;
+  }
+
+  let optionsHtml = d.options.map((opt, i) => `
+    <button class="option-btn" data-idx="${i}">
+      <span class="opt-letter">${opt.letter}</span>
+      <span class="opt-text">${opt.text}</span>
+    </button>
+  `).join("");
+
+  wrap.innerHTML = `
+    <div class="scenario-card">
+      <div class="d-eyebrow">${d.eyebrow}</div>
+      <h2>${d.title}</h2>
+      <p>${d.narrative}</p>
+    </div>
+    ${toolHtml}
+    <div class="options" id="optionsList">${optionsHtml}</div>
+    <div class="feedback-card" id="feedbackCard"></div>
+  `;
+
+  document.querySelectorAll(".option-btn").forEach(btn => {
+    btn.addEventListener("click", () => selectOption(parseInt(btn.dataset.idx)));
+  });
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+function selectOption(idx){
+  const d = DECISIONS[currentDecision];
+  const opt = d.options[idx];
+
+  document.querySelectorAll(".option-btn").forEach((btn, i) => {
+    btn.disabled = true;
+    if(i === idx){ btn.style.borderColor = "var(--navy)"; btn.style.borderWidth = "2.4px"; }
+    else { btn.style.opacity = "0.45"; }
+  });
+
+  metrics.cash += opt.metrics.cash;
+  metrics.rep += opt.metrics.rep;
+  metrics.morale += opt.metrics.morale;
+  updateDashboard();
+
+  journey.push({
+    decisionTitle: d.title,
+    choiceLetter: opt.letter,
+    choiceText: opt.text,
+    weakest: !!opt.weakest,
+    reviewKey: opt.reviewKey || null
+  });
+
+  function mcSpan(label, val){
+    const cls = val > 0 ? "pos" : (val < 0 ? "neg" : "neu");
+    const sign = val > 0 ? "+" : "";
+    return `<span class="mc ${cls}">${label} ${sign}${val}</span>`;
+  }
+
+  let reviewHtml = "";
+  if(opt.weakest && opt.reviewKey && REVIEW_LINKS[opt.reviewKey]){
+    const rl = REVIEW_LINKS[opt.reviewKey];
+    reviewHtml = `
+      <div class="review-callout">
+        <div class="rc-label">Want to revisit this?</div>
+        <a href="${rl.url}" target="_blank" rel="noopener">${rl.label} &rarr;</a>
+      </div>`;
+  }
+  let toolFollowup = "";
+  if(opt.toolKey && TOOL_LINKS[opt.toolKey]){
+    const tl = TOOL_LINKS[opt.toolKey];
+    toolFollowup = `
+      <div class="review-callout">
+        <div class="rc-label">Take it further</div>
+        <a href="${tl.url}" target="_blank" rel="noopener">${tl.label} &rarr;</a>
+      </div>`;
+  }
+
+  const isLast = currentDecision === DECISIONS.length - 1;
+  const fbCard = document.getElementById("feedbackCard");
+  fbCard.innerHTML = `
+    <div class="fb-label ${opt.weakest ? 'mixed' : 'good'}">${opt.weakest ? 'Here\u2019s what happened' : 'Here\u2019s what happened'}</div>
+    <p>${opt.feedback}</p>
+    <div class="metric-changes">
+      ${mcSpan("Cash", opt.metrics.cash)}
+      ${mcSpan("Reputation", opt.metrics.rep)}
+      ${mcSpan("Team Morale", opt.metrics.morale)}
+    </div>
+    ${reviewHtml}
+    ${toolFollowup}
+    <div class="actions">
+      <button class="btn btn-primary" id="nextBtn">${isLast ? "See Your Year in Review" : "Next Decision"} <span class="arrow-circle">&rarr;</span></button>
+    </div>
+  `;
+  fbCard.classList.add("show");
+  fbCard.scrollIntoView({behavior:"smooth", block:"center"});
+
+  document.getElementById("nextBtn").addEventListener("click", () => {
+    currentDecision++;
+    updateDashboard();
+    if(currentDecision >= DECISIONS.length){
+      renderEnding();
+    } else {
+      renderDecision();
+    }
+  });
+}
+
+function classify(val){
+  if(val <= -2) return "low";
+  if(val >= 4) return "high";
+  return "mid";
+}
+
+function getEnding(){
+  const c = classify(metrics.cash), r = classify(metrics.rep), m = classify(metrics.morale);
+  if(m === "low"){
+    return {
+      title: "Running on Fumes",
+      desc: "The business is surviving, but the team culture took real hits this year. Financial or reputational wins don't mean much if the people running the truck day to day are burned out or disengaged - that's usually the first crack that turns into a much bigger problem."
+    };
+  }
+  if(c === "high" && r === "high" && m === "high"){
+    return {
+      title: "Thriving All-Around Operator",
+      desc: "Strong cash position, a solid reputation, and a team that's genuinely engaged. This is what it looks like when the fundamentals from every part of this course come together in the same year."
+    };
+  }
+  if(c === "high" && r !== "high"){
+    return {
+      title: "Financially Healthy but Under-the-Radar",
+      desc: "Your numbers are strong, but your reputation and visibility haven't caught up yet. A financially disciplined year is a great foundation - now's the time to invest some of that stability into growing your presence."
+    };
+  }
+  if(r === "high" && c !== "high"){
+    return {
+      title: "Beloved but Financially Fragile",
+      desc: "Customers and organizers love you, but the margins are thinner than the reputation suggests. Popularity doesn't automatically convert to a healthy cash position - it's worth revisiting where the money is actually leaking."
+    };
+  }
+  if(c === "low" && r === "low"){
+    return {
+      title: "Barely Hanging On",
+      desc: "This year was a genuine struggle on more than one front. That's not unusual for a first year - but it's worth a hard look at which of this year's decisions to make differently next time."
+    };
+  }
+  return {
+    title: "Solid, Sustainable Operator",
+    desc: "Not flashy, but real: reasonable cash discipline, a decent reputation, and a team that's holding together. This is what a sustainable first year actually looks like for most new food truck owners."
+  };
+}
+
+function renderEnding(){
+  const wrap = document.getElementById("gameWrap");
+  const ending = getEnding();
+
+  const weakChoices = journey.filter(j => j.weakest && j.reviewKey && REVIEW_LINKS[j.reviewKey]);
+  let reviewListHtml;
+  if(weakChoices.length === 0){
+    reviewListHtml = `<p class="all-good">You didn't land on the weaker option in any decision this year - nothing specific to flag for review.</p>`;
+  } else {
+    reviewListHtml = `<ul>` + weakChoices.map(w => {
+      const rl = REVIEW_LINKS[w.reviewKey];
+      return `<li><b>${w.decisionTitle}:</b> <a href="${rl.url}" target="_blank" rel="noopener">${rl.label}</a></li>`;
+    }).join("") + `</ul>`;
+  }
+
+  const journeyRows = journey.map((j, i) => `
+    <tr>
+      <td>${i+1}. ${DECISIONS[i].title}</td>
+      <td>${j.choiceLetter}. ${j.choiceText}</td>
+    </tr>
+  `).join("");
+
+  wrap.innerHTML = `
+    <div class="ending-hero">
+      <div class="eh-eyebrow">Your Year in Review</div>
+      <h2>${ending.title}</h2>
+      <p>${ending.desc}</p>
+      <div class="final-metrics">
+        <div class="fm"><div class="fm-label">Cash</div><div class="fm-value">${metrics.cash > 0 ? "+" : ""}${metrics.cash}</div></div>
+        <div class="fm"><div class="fm-label">Reputation</div><div class="fm-value">${metrics.rep > 0 ? "+" : ""}${metrics.rep}</div></div>
+        <div class="fm"><div class="fm-label">Team Morale</div><div class="fm-value">${metrics.morale > 0 ? "+" : ""}${metrics.morale}</div></div>
+      </div>
+    </div>
+
+    <table class="journey-table">
+      <thead><tr><th>Decision</th><th>Your Choice</th></tr></thead>
+      <tbody>${journeyRows}</tbody>
+    </table>
+
+    <div class="review-list-card">
+      <h3>Recommended Review</h3>
+      <div class="rlc-sub">Based on your choices this year, here's what might be worth a second look:</div>
+      ${reviewListHtml}
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="downloadBtn">Download Your Year in Review as PDF <span class="arrow-circle">&darr;</span></button>
+    </div>
+    <p class="footnote">This activity is not graded and nothing you enter here is submitted automatically.</p>
+  `;
+
+  document.getElementById("downloadBtn").addEventListener("click", downloadPDF);
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+function downloadPDF(){
+  const ending = getEnding();
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: "pt", format: "letter" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 54;
+  const contentW = pageW - margin*2;
+  let y = 0;
+
+  doc.setFillColor(26,39,68);
+  doc.rect(0, 0, pageW, 100, "F");
+  doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(254,214,0);
+  doc.text("YOUR FIRST YEAR \u2014 CAPSTONE SCENARIO", margin, 40);
+  doc.setFont("helvetica","bold"); doc.setFontSize(20); doc.setTextColor(255,255,255);
+  doc.text(ending.title, margin, 68);
+  y = 130;
+
+  function newPageIfNeeded(need){ if(y + need > pageH - margin){ doc.addPage(); y = margin; } }
+  function body(text, opts={}){
+    doc.setFont("helvetica", opts.bold ? "bold" : "normal");
+    doc.setFontSize(opts.size || 10);
+    doc.setTextColor(...(opts.color || [44,62,74]));
+    const lines = doc.splitTextToSize(text, contentW);
+    lines.forEach(line => { newPageIfNeeded(14); doc.text(line, margin, y); y += 14; });
+    y += opts.gap !== undefined ? opts.gap : 8;
+  }
+
+  body(ending.desc, {size:10.5, gap:16});
+  body(`Final Metrics \u2014 Cash: ${metrics.cash > 0 ? "+" : ""}${metrics.cash}   Reputation: ${metrics.rep > 0 ? "+" : ""}${metrics.rep}   Team Morale: ${metrics.morale > 0 ? "+" : ""}${metrics.morale}`,
+    {bold:true, size:11, color:[5,45,132], gap:22});
+
+  body("Your Decisions This Year", {bold:true, size:13, color:[5,45,132], gap:14});
+  journey.forEach((j, i) => {
+    body(`${i+1}. ${DECISIONS[i].title}`, {bold:true, size:10.5, color:[26,39,68], gap:4});
+    body(`${j.choiceLetter}. ${j.choiceText}`, {size:10, gap:12});
+  });
+
+  y += 8;
+  const weakChoices = journey.filter(j => j.weakest && j.reviewKey && REVIEW_LINKS[j.reviewKey]);
+  body("Recommended Review", {bold:true, size:13, color:[5,45,132], gap:14});
+  if(weakChoices.length === 0){
+    body("No specific topics flagged - nice work this year.", {size:10.5, gap:8});
+  } else {
+    weakChoices.forEach(w => {
+      const rl = REVIEW_LINKS[w.reviewKey];
+      body(`\u2022 ${w.decisionTitle}: ${rl.label}`, {size:10.5, gap:6});
+    });
+  }
+
+  newPageIfNeeded(40);
+  y += 10;
+  doc.setDrawColor(220,220,215); doc.line(margin, y, pageW-margin, y); y += 18;
+  doc.setFont("helvetica","italic"); doc.setFontSize(8.5); doc.setTextColor(140,140,140);
+  doc.text("This activity is not graded and nothing you enter here is submitted automatically.", margin, y);
+
+  doc.save("your-first-year-capstone.pdf");
+}
+
+renderDecision();
+updateDashboard();
+</script>
+
+</body>
+</html>
